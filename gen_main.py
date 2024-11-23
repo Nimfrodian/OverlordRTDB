@@ -3,9 +3,12 @@ from collections import defaultdict
 import gen_formatter
 import gen_c_file_parsing
 import gen_c_file_making
+import os
 
 def process_files():
-    rtdb_var_files = glob.glob('*_rtdb_vars.h')
+    # Define the path to the include folder and search for *_rtdb_vars.h files in the include folder
+    rtdb_var_files = glob.glob(f'include/*_rtdb_vars.h')
+
     all_variables = defaultdict(list)
 
     for var_file in rtdb_var_files:
@@ -17,7 +20,8 @@ def process_files():
         rtdb_file = var_file.replace('_rtdb_vars.h', '_rtdb.h')
 
         # Extract the prefix from the filename
-        prefix = var_file.split('_rtdb_vars.h')[0]
+        prefix = var_file.replace('_rtdb_vars.h','')
+        prefix = prefix.replace('include\\','')
 
         # create each module's rtdb
         gen_c_file_making.write_module_rtdb(prefix, rtdb_file, variables)
@@ -29,9 +33,9 @@ def process_files():
     # create rtdb variables file that contains references to all rtdb variables
     gen_c_file_making.write_rtdb_vars_h(all_variables)
 
-    # create rtdb.c file with all of the required read/write access functionalities
+    # create rtdb.c and rtdb.h files with all of the required read/write access functionalities
     gen_c_file_making.write_rtdb_c(all_variables)
-
+    gen_c_file_making.write_rtdb_h()
 
 if __name__ == "__main__":
     process_files()
