@@ -3,7 +3,7 @@ import re
 # Function to process and format the lines
 def format_lines(input_file):
     # Define the regex pattern to match the lines
-    pattern = re.compile(r'^(\[?\w*\]?)\s*(\[?\w*\]?)\s*\[?(\w*\s?[(]?\w*[)]?)\]?\;\s*\/*\<\s*\[(\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[?([a-z,0-9,., ]*)\]?\s*\*?\/?')
+    pattern = re.compile(r'^(\[?\w*\]?)\s*(\[?\w*\]?)\s*\[?(\w*\s?[(]?\w*[)]?)\]?\;\s*\/*\<\s*\[(\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[?([A-Z,a-z,0-9,., ,-]*)\]?\s*\*?\/?')
 
     totalLines = []
     totalParts = []

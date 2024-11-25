@@ -16,7 +16,7 @@ These generated files, rtdb.h and rtdb.c, will then be utilized by the Direct Me
 ```
 - src
     someCfiles.c
-    ...  
+    ...
 - lib
   ...
 - include
@@ -30,16 +30,16 @@ These generated files, rtdb.h and rtdb.c, will then be utilized by the Direct Me
 2. *_rtdb_vars.h files are located in 'include' folder of the parent project
 3. the *_rtdb_vars.h files have the following format
 ```
-  #ifndef MOD1_RTDB_VARS_H
-  #define MOD1_RTDB_VARS_H
-  #include "rtdb.h"
-  /*
-  note; min, default and max can be left empty if their value is not limited or relevant
-  [varType]    [arrName]              [SIZE (optional)]; ///< [unit]   [min]              [default]          [max]               [comment]
-  */
-  tS16S        mod1_ti_timeVar_S16;                      ///< [ms]     [-1]               [0]                [120]               time variable
-  tU32S        mod1_p_prcntArr_U32    [10];              ///< [a]      []                 []                 []                  percent array
-  #endif
+#ifndef MOD1_RTDB_VARS_H
+#define MOD1_RTDB_VARS_H
+#include "rtdb.h"
+/*
+ * note; min, default and max can be left empty if their value is not limited or relevant
+ * [varType]    [arrName]                              [SIZE (optional)]; ///< [unit]  [min]  [default]  [max]    [comment]
+ */
+tS16S        mod1_ti_timeVar_S16;                      ///< [ms]     [-1]               [0]                [120]               time variable
+tU32S        mod1_p_prcntArr_U32    [10];              ///< [a]      []                 []                 []                  percent array
+#endif
 ```
 5. the use of rtdbT (and connected) files types, as defined and created by the tool
 6. Requires Python 3.10 (possibly works with other versions as well)

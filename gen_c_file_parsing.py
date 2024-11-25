@@ -13,7 +13,7 @@ class variable:
     comment: str
 
 def parse_file(file_path):
-    variable_pattern = re.compile(r'^\s*(\w*)\s*(\w*)\s*\[?(\w*)\]?\;\s*\/*\<\s*\[(\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*(\w.*)')
+    variable_pattern = re.compile(r'^(\[?\w*\]?)\s*(\[?\w*\]?)\s*\[?(\w*\s?[(]?\w*[)]?)\]?\;\s*\/*\<\s*\[(\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[(-*\w*\.*\w*)\]\s*\[?([A-Z,a-z,0-9,., ,-]*)\]?\s*\*?\/?')
     variables = defaultdict(list)
 
     with open(file_path, 'r') as file:

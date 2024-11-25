@@ -62,11 +62,11 @@ def write_module_rtdb(module_name, file_path, variables):
         for var_type,var_list in variables.items():
             for var in sorted_nicely(var_list, key=lambda var: var.name):
                 if var.arrSize == '':
-                    file.write(f'\trtdb_assign_{var_type}(&{var.name}, {to_all_caps(var.name)}')
+                    file.write(f'    rtdb_assign_{var_type}(&{var.name}, {to_all_caps(var.name)}')
                     assign_aux_data(file, var, var_type)
                 else:
                     for i in range(0,int(var.arrSize)):
-                        file.write(f'\trtdb_assign_{var_type}(&{var.name}[{i}], {to_all_caps(var.name)}_{i}')
+                        file.write(f'    rtdb_assign_{var_type}(&{var.name}[{i}], {to_all_caps(var.name)}_{i}')
                         assign_aux_data(file,var, var_type)
         file.write("}\n")
 
@@ -133,7 +133,7 @@ def write_rtdb_vars_h(variables):
             file.write(',\n')
         file.write('    VAR_UNIT_MAX_NUM\n')
         file.write('} unitEnumT;\n')
-        file.write('\nunsigned char* rtdb_unitLookupTable[VAR_UNIT_MAX_NUM] =\n')
+        file.write('\nchar* rtdb_unitLookupTable[VAR_UNIT_MAX_NUM] =\n')
         file.write('{\n')
         for item in nicelySortedUnits:
             if item == '':
@@ -147,14 +147,14 @@ def write_rtdb_vars_h(variables):
             file.write('enum\n{\n')
             for var in sorted_nicely(var_list, key=lambda var: var.name):
                 if var.arrSize == '':
-                    file.write(f'\t{to_all_caps(var.name)} = {counter},\n')
+                    file.write(f'    {to_all_caps(var.name)} = {counter},\n')
                     counter = counter + 1
                 else:
                     for i in range(0,int(var.arrSize)):
-                        file.write(f'\t{to_all_caps(var.name)}_{i} = {counter},\n')
+                        file.write(f'    {to_all_caps(var.name)}_{i} = {counter},\n')
                         counter = counter + 1
 
-            file.write(f"\n\tNUM_OF_{var_type.upper()} = {counter}\n")
+            file.write(f"\n    NUM_OF_{var_type.upper()} = {counter}\n")
             counter = 0
             file.write('};\n\n')  # Add extra newline between types
 
@@ -178,7 +178,7 @@ def write_rtdb_vars_h(variables):
         file.write(f'    signalStateT signalState : 8;       ///< state of the signal, i.e., its reliability\n')
         file.write(f'    objectStatusT objectStatus : 8;     ///< status of this object\n')
         file.write(f'    tU8 signalUnit;                     ///< unit of the signal, i.e., volt or RPM\n')
-        file.write(f'    tU8* signalCmnt;                    ///< Signal comment\n')
+        file.write(f'    char* signalCmnt;                   ///< Signal comment\n')
         file.write('} rtdbT;\n\n')
 
         file.write(f"typedef struct\n")
@@ -319,11 +319,12 @@ def write_rtdb_c(variables):
             file.write('    {\n')
             file.write('        if (OBJECT_STANDARD == VarAddrs->ss.objectStatus)\n')
             file.write('        {\n')
-            file.write(f'            VarAddrs->{bt[var_type]}_val = NewVal;\n')
+            file.write('            valToWrite = NewVal;\n')
             file.write(f'            rtdb_calcCrc32( VarAddrs, sizeof({var_type}));\n')
             file.write('        }\n')
             file.write('    }\n')
             file.write(f'\n')
+            file.write(f'    VarAddrs->{bt[var_type]}_val = valToWrite;\n')
             file.write(f'    return stsCode;\n')
             file.write('}')
 
@@ -370,9 +371,14 @@ def write_rtdb_c(variables):
             file.write('}')
 
         for var_type in variables:
-            file.write(f'\n\n{var_type} rtdb_read_{var_type}( {var_type}* VarAddrs )\n')
+            file.write('\n\n/**\n')
+            file.write('* @brief Function returns current value of given variable\n')
+            file.write('* @param VarAddrs address to the underlying variable\n')
+            file.write('* @return Verified value of the given variable\n')
+            file.write('*/\n')
+            file.write(f'{bt[var_type]} rtdb_read_{var_type}( {var_type}* VarAddrs )\n')
             file.write('{\n')
-            file.write(f'    {var_type} toReturn = *VarAddrs;\n')
+            file.write(f'    {bt[var_type]} toReturn = VarAddrs->{bt[var_type]}_val;\n')
             file.write(f'    // Check CRC\n')
             file.write(f'    if (0)\n')
             file.write('    {\n')
