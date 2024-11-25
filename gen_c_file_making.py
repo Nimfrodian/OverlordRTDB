@@ -132,15 +132,7 @@ def write_rtdb_vars_h(variables):
                 file.write(' = 0')
             file.write(',\n')
         file.write('    VAR_UNIT_MAX_NUM\n')
-        file.write('} unitEnumT;\n')
-        file.write('\nchar* rtdb_unitLookupTable[VAR_UNIT_MAX_NUM] =\n')
-        file.write('{\n')
-        for item in nicelySortedUnits:
-            if item == '':
-                file.write(f'    [VAR_UNIT_NONE] = "/",\n')
-            else:
-                file.write(f'    [VAR_UNIT_{item}] = "{item}",\n')
-        file.write('};\n\n')
+        file.write('} unitEnumT;\n\n')
 
         for var_type,var_list in variables.items():
             file.write(f'// {var_type}\n')
@@ -178,7 +170,7 @@ def write_rtdb_vars_h(variables):
         file.write(f'    signalStateT signalState : 8;       ///< state of the signal, i.e., its reliability\n')
         file.write(f'    objectStatusT objectStatus : 8;     ///< status of this object\n')
         file.write(f'    tU8 signalUnit;                     ///< unit of the signal, i.e., volt or RPM\n')
-        file.write(f'    char* signalCmnt;                   ///< Signal comment\n')
+        file.write(f'    const char* signalCmnt;             ///< Signal comment\n')
         file.write('} rtdbT;\n\n')
 
         file.write(f"typedef struct\n")
@@ -261,25 +253,51 @@ def write_rtdb_vars_h(variables):
         file.write(f"    tU32 tE_def;\n")
         file.write(f"    tU32 tE_max;\n")
         file.write("} tES;\n\n")
-
-        for var_type in variables:
-            file.write(f"{var_type}* rtdb_arr_{var_type}[NUM_OF_{var_type.upper()}]")
-            file.write(" = {0};\n")
         file.write(f"#endif\n")
 
 
-def write_rtdb_c(variables):
-    with open('src/rtdb.c', 'w') as file:
+def write_rtdb_c(variables, modules):
+    with open('src/rtdb.cpp', 'w') as file:
         file.write('#include"rtdb.h"\n')
+        for module in modules:
+            file.write(f'#include "{module}_rtdb.h"\n')
+
+        file.write('\nstatic bool rtdb_s_moduleInit_tB = false;\n')
+        file.write('static uint32_t rtdb_nr_moduleId_U32 = 0;\n')
+
+        file.write('\nconst char* rtdb_unitLookupTable[VAR_UNIT_MAX_NUM] =\n')
+        file.write('{\n')
+
+        printed_units = set()
+        for var_type,var_list in variables.items():
+            for var in var_list:
+                if var.unit not in printed_units:
+                    printed_units.add(var.unit)
+        nicelySortedUnits = sorted(printed_units)
+        for item in nicelySortedUnits:
+            if item == '':
+                file.write(f'    [VAR_UNIT_NONE] = "/",\n')
+            else:
+                file.write(f'    [VAR_UNIT_{item}] = "{item}",\n')
+        file.write('};\n\n')
+        for var_type in variables:
+            file.write(f"{var_type}* rtdb_arr_{var_type}[NUM_OF_{var_type.upper()}]")
+            file.write(" = {0};\n")
+
+        file.write('\ntU32 rtdb_calcCrc32 (void* VarAddrs, tU32 VarSize )\n')
+        file.write('{\n')
+        file.write('    // TODO\n')
+        file.write('    return -1;\n')
+        file.write('}\n')
 
         for var_type in variables:
-            file.write(f'\n\nvoid rtdb_assign_{var_type}( {var_type}* VarAddrs,\n')
+            file.write(f'\nvoid rtdb_assign_{var_type}( {var_type}* VarAddrs,\n')
             file.write(f'                         tU32 Indx,\n')
             file.write(f'                         unitEnumT Unit,\n')
             file.write(f'                         {bt[var_type]} Min,\n')
             file.write(f'                         {bt[var_type]} Def,\n')
             file.write(f'                         {bt[var_type]} Max,\n')
-            file.write(f'                         char* Comment )\n')
+            file.write(f'                         const char* Comment )\n')
             file.write('{\n')
             file.write(f'    rtdb_arr_{var_type}[Indx] = VarAddrs; // Copy address of variable to lookup table\n')
             file.write(f'    VarAddrs->{bt[var_type]}_val = Def;\n')
@@ -388,25 +406,49 @@ def write_rtdb_c(variables):
             file.write(f'    return toReturn;\n')
             file.write('}')
 
-def write_rtdb_h():
+        file.write('\n\nvoid rtdb_init(tRTDB_INITDATA_STR* RtdbCfg)\n')
+        file.write('{\n')
+        file.write('    if (true == rtdb_s_moduleInit_tB)\n')
+        file.write('    {\n')
+        file.write('        errh_reportError(ERRH_NOTIF, rtdb_nr_moduleId_U32, 0, RTDB_API_INIT_U32, ERRH_MODULE_ALREADY_INIT);\n')
+        file.write('    }\n')
+        file.write('    else if (NULL == RtdbCfg)\n')
+        file.write('    {\n')
+        file.write('        errh_reportError(ERRH_ERROR_CRITICAL, rtdb_nr_moduleId_U32, 0, RTDB_API_INIT_U32, ERRH_POINTER_IS_NULL);\n')
+        file.write('    }\n')
+        file.write('    else\n')
+        file.write('    {\n')
+        file.write('        rtdb_s_moduleInit_tB = true;\n')
+        for module in modules:
+            file.write(f'        {module}_rtdb_init();\n')
+        file.write('    }\n')
+        file.write('}\n')
+
+def write_rtdb_h(modules):
     with open('include/rtdb.h', 'w') as file:
         file.write('#ifndef RTDB_H\n')
         file.write('#define RTDB_H\n')
         file.write('\n')
         file.write('#include "rtdb_vars.h"\n')
+        file.write('#include "errh.h"\n\n')
+        file.write('\n#define RTDB_API_INIT_U32                  ((uint32_t) 1)\n')
         file.write('\n')
+        file.write('typedef struct\n')
+        file.write('{\n')
+        file.write('    uint32_t nr_moduleId_U32;       ///< ID of the module\n')
+        file.write('} tRTDB_INITDATA_STR;\n\n')
         file.write('// ASSIGN DURING INIT\n')
-        file.write('void rtdb_assign_tU8S ( tU8S* VarAddrs, tU32 Indx, unitEnumT Unit, tU8 Min, tU8 Def, tU8 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tU16S( tU16S* VarAddrs, tU32 Indx, unitEnumT Unit, tU16 Min, tU16 Def, tU16 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tU32S( tU32S* VarAddrs, tU32 Indx, unitEnumT Unit, tU32 Min, tU32 Def, tU32 Max, char* Comment );\n')
+        file.write('void rtdb_assign_tU8S ( tU8S* VarAddrs, tU32 Indx, unitEnumT Unit, tU8 Min, tU8 Def, tU8 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tU16S( tU16S* VarAddrs, tU32 Indx, unitEnumT Unit, tU16 Min, tU16 Def, tU16 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tU32S( tU32S* VarAddrs, tU32 Indx, unitEnumT Unit, tU32 Min, tU32 Def, tU32 Max, const char* Comment );\n')
         file.write('\n')
-        file.write('void rtdb_assign_tS8S ( tS8S* VarAddrs, tU32 Indx, unitEnumT Unit, tS8 Min, tS8 Def, tS8 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tS16S( tS16S* VarAddrs, tU32 Indx, unitEnumT Unit, tS16 Min, tS16 Def, tS16 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tS32S( tS32S* VarAddrs, tU32 Indx, unitEnumT Unit, tS32 Min, tS32 Def, tS32 Max, char* Comment );\n')
+        file.write('void rtdb_assign_tS8S ( tS8S* VarAddrs, tU32 Indx, unitEnumT Unit, tS8 Min, tS8 Def, tS8 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tS16S( tS16S* VarAddrs, tU32 Indx, unitEnumT Unit, tS16 Min, tS16 Def, tS16 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tS32S( tS32S* VarAddrs, tU32 Indx, unitEnumT Unit, tS32 Min, tS32 Def, tS32 Max, const char* Comment );\n')
         file.write('\n')
-        file.write('void rtdb_assign_tES   ( tES*  VarAddrs, tU32 Indx, unitEnumT Unit, tU32 Min, tU32 Def, tU32 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tBS   ( tBS*  VarAddrs, tU32 Indx, unitEnumT Unit, tU8 Min, tU8 Def, tU8 Max, char* Comment );\n')
-        file.write('void rtdb_assign_tF32S ( tF32S* VarAddrs, tU32 Indx, unitEnumT Unit, float Min, float Def, float Max, char* Comment );\n')
+        file.write('void rtdb_assign_tES   ( tES*  VarAddrs, tU32 Indx, unitEnumT Unit, tU32 Min, tU32 Def, tU32 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tBS   ( tBS*  VarAddrs, tU32 Indx, unitEnumT Unit, tU8 Min, tU8 Def, tU8 Max, const char* Comment );\n')
+        file.write('void rtdb_assign_tF32S ( tF32S* VarAddrs, tU32 Indx, unitEnumT Unit, float Min, float Def, float Max, const char* Comment );\n')
         file.write('\n')
         file.write('\n')
         file.write('// WRITE DURING RUNTIME\n')
@@ -454,4 +496,7 @@ def write_rtdb_h():
         file.write('tU32 rtdb_checkCrc32 (void* VarAddrs, tU32 VarSize );\n')
         file.write('tU32 rtdb_calcCrc32  (void* VarAddrs, tU32 VarSize );\n')
         file.write('\n')
-        file.write('#endif\n')
+        for module in modules:
+            file.write(f'void {module}_rtdb_init(void);\n')
+        file.write(f'void rtdb_init(tRTDB_INITDATA_STR* RtdbCfg);\n')
+        file.write('\n#endif\n')

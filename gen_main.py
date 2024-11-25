@@ -9,7 +9,8 @@ def process_files():
     # Define the path to the include folder and search for *_rtdb_vars.h files in the include folder
     rtdb_var_files = glob.glob(f'include/*_rtdb_vars.h')
 
-    all_variables = defaultdict(list)
+    all_modules = []   # Holds all module names
+    all_variables = defaultdict(list) # Holds all variable names from all modules
 
     for var_file in rtdb_var_files:
         # format files with variables
@@ -22,6 +23,7 @@ def process_files():
         # Extract the prefix from the filename
         prefix = var_file.replace('_rtdb_vars.h','')
         prefix = prefix.replace('include\\','')
+        all_modules.append(prefix)
 
         # create each module's rtdb
         gen_c_file_making.write_module_rtdb(prefix, rtdb_file, variables)
@@ -34,8 +36,8 @@ def process_files():
     gen_c_file_making.write_rtdb_vars_h(all_variables)
 
     # create rtdb.c and rtdb.h files with all of the required read/write access functionalities
-    gen_c_file_making.write_rtdb_c(all_variables)
-    gen_c_file_making.write_rtdb_h()
+    gen_c_file_making.write_rtdb_c(all_variables, all_modules)
+    gen_c_file_making.write_rtdb_h(all_modules)
 
 if __name__ == "__main__":
     process_files()
