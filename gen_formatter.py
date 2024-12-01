@@ -15,14 +15,12 @@ def format_lines(input_file):
             if match:
                 # Extract the groups from the match
                 parts = match.groups()
-                print(parts)
                 totalParts.append(parts)
 
     maxLengths = [0]*8
     for part in totalParts:
         for i in range(8):
             maxLengths[i] = max(maxLengths[i], len(part[i]))
-    print(maxLengths)
 
 
 
