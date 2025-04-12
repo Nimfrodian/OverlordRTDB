@@ -39,10 +39,7 @@ def format_lines(input_file):
                 slice2 = maxLengths[3:7]
                 for partText,lengthInt in zip(slice1,slice2):
                     formatted_line += "{:<{}} ".format(f'[{partText}]', lengthInt+3)
-                if matchIndx == 0:
-                    formatted_line += f' [{totalParts[matchIndx][7]}]'
-                else:
-                    formatted_line += f' {totalParts[matchIndx][7]}'
+                formatted_line += f' [{totalParts[matchIndx][7]}]'
                 formatted_line += "\n"
                 matchIndx = matchIndx+1
                 totalLines.append(formatted_line)
