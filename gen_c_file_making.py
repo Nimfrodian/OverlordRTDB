@@ -162,11 +162,19 @@ def write_rtdb_vars_h(variables):
             if var_type_at in variables:
                 for var in sorted_nicely(var_list, key=lambda var: var.name):
                     if var.arrSize == '':
-                        file.write(f'    {to_all_caps(var.name)} = {counter},\n')
+                        line = f'    {to_all_caps(var.name)} = {counter},'
+                        while len(line) < 50:
+                            line += ' '
+                        line += f'// {var.comment}\n'
+                        file.write(line)
                         counter = counter + 1
                     else:
                         for i in range(0,int(var.arrSize)):
-                            file.write(f'    {to_all_caps(var.name)}_{i} = {counter},\n')
+                            line = f'    {to_all_caps(var.name)}_{i} = {counter},'
+                            while len(line) < 50:
+                                line += ' '
+                            line += f'// {var.comment}\n'
+                            file.write(line)
                             counter = counter + 1
             file.write(f"    NUM_OF_{var_type_at} = {counter}\n")
             file.write('}')
