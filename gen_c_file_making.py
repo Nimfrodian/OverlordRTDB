@@ -160,7 +160,7 @@ def write_rtdb_vars_h(variables):
             file.write('typedef enum\n{\n')
             counter = 0
             if var_type_at in variables:
-                for var in sorted_nicely(var_list, key=lambda var: var.name):
+                for var in sorted_nicely(variables[var_type_at], key=lambda var: var.name):
                     if var.arrSize == '':
                         line = f'    {to_all_caps(var.name)} = {counter},'
                         while len(line) < 50:
