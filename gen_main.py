@@ -3,7 +3,6 @@ from collections import defaultdict
 import gen_formatter
 import gen_c_file_parsing
 import gen_c_file_making
-import os
 
 def process_files():
     # Define the path to the include folder and search for *_rtdb_vars.h files in the include folder
