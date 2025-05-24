@@ -84,9 +84,11 @@ def write_module_rtdb(module_name, file_path, variables):
                     file.write(f'    rtdb_assign_{var_type}(&{var.name}, {to_all_caps(var.name)}')
                     assign_aux_data(file, var, var_type)
                 else:
-                    for i in range(0,int(var.arrSize)):
-                        file.write(f'    rtdb_assign_{var_type}(&{var.name}[{i}], {to_all_caps(var.name)}_{i}')
-                        assign_aux_data(file,var, var_type)
+                    file.write(f'    static const char desc_{var.name}[] = "{var.comment}";\n')
+                    file.write(f'    for (uint32_t i = 0; i <= {var.arrSize}; ++i)\n')
+                    file.write('    {\n')
+                    file.write(f'        rtdb_assign_{var_type}(&({var.name}[i]), {to_all_caps(var.name)}_0 + i, VAR_UNIT_NONE, 0, 0, 1000, desc_{var.name});\n')
+                    file.write('    }\n')
         file.write("}\n")
 
         file.write(f"#endif\n")
